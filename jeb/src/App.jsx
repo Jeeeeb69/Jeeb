@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react';
 import './index.css';
 
 function TodoList() {
-    const [tasks, setTasks] = useState([
-        { text: 'Learn React', completed: false },
-        { text: 'Build a TODO App', completed: false },
-        { text: 'Deploy the App', completed: false }
-    ]);
+    const [tasks, setTasks] = useState(() => {
+        const savedTasks = localStorage.getItem('tasks');
+        return savedTasks ? JSON.parse(savedTasks) : [
+            { text: 'Learn React', completed: false },
+            { text: 'Build a TODO App', completed: false },
+            { text: 'Deploy the App', completed: false }
+        ];
+    });
+    const [newTask, setNewTask] = useState('');
     const [editingIndex, setEditingIndex] = useState(null);
     const [editText, setEditText] = useState('');
     const [filter, setFilter] = useState('All');
@@ -18,6 +22,10 @@ function TodoList() {
         document.documentElement.classList.toggle('dark-mode', darkMode);
         localStorage.setItem('darkMode', darkMode);
     }, [darkMode]);
+
+    useEffect(() => {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }, [tasks]);
 
     const startEditing = (index) => {
         setEditingIndex(index);
@@ -37,6 +45,17 @@ function TodoList() {
         setTasks(updatedTasks);
     };
 
+    const addTask = () => {
+        if (newTask.trim() === '') return;
+        setTasks([...tasks, { text: newTask, completed: false }]);
+        setNewTask('');
+    };
+
+    const deleteTask = (index) => {
+        const updatedTasks = tasks.filter((_, i) => i !== index);
+        setTasks(updatedTasks);
+    };
+
     const filteredTasks = tasks.filter(task => {
         if (filter === 'Completed') return task.completed;
         if (filter === 'Pending') return !task.completed;
@@ -45,7 +64,7 @@ function TodoList() {
 
     return (
         <div className={`container ${darkMode ? 'dark-mode' : ''}`}>
-            <h2>Todo List</h2>
+            <h2>Jeb Todo-List</h2>
             <button className="toggle-btn" onClick={() => setDarkMode(!darkMode)}>
                 {darkMode ? 'Light Mode' : 'Dark Mode'}
             </button>
@@ -53,6 +72,15 @@ function TodoList() {
                 <button onClick={() => setFilter('All')}>All</button>
                 <button onClick={() => setFilter('Completed')}>Completed</button>
                 <button onClick={() => setFilter('Pending')}>Pending</button>
+            </div>
+            <div className="add-task">
+                <input 
+                    type="text" 
+                    value={newTask} 
+                    onChange={(e) => setNewTask(e.target.value)}
+                    placeholder="Add a new task..."
+                />
+                <button onClick={addTask}>Add</button>
             </div>
             <ul className="task-list">
                 {filteredTasks.map((task, index) => (
@@ -72,6 +100,7 @@ function TodoList() {
                             <>
                                 <span className={task.completed ? 'completed-task' : ''}>{task.text}</span> 
                                 <button onClick={() => startEditing(index)}>Edit</button>
+                                <button onClick={() => deleteTask(index)}>Delete</button>
                             </>
                         )}
                     </li>
